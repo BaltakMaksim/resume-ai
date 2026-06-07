@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>РезюмеAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-gradient"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <div class="logo-icon">🤖</div>
+                <div class="logo-text">РезюмеAI</div>
+            </div>
+            <p class="subtitle">
+                Искусственный интеллект проанализирует твоё резюме и GitHub профиль, 
+                даст честную оценку и конкретные советы для получения оффера мечты
+            </p>
+        </div>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Перетащи PDF резюме сюда</div>
+                <div class="upload-hint">или нажми, чтобы выбрать файл</div>
+                <input type="file" id="resumeInput" accept=".pdf" class="file-input">
+            </div>
+            
+            <div class="file-name" id="fileName"></div>
+
+           <div class="input-group">
+    <label for="githubInput" class="input-label">
+        <span class="label-icon"></span>
+        GitHub username
+        <span class="optional-badge">опционально</span>
+    </label>
+    <input 
+        type="text" 
+        id="githubInput" 
+        class="input-field" 
+        placeholder="Оставь пустым, если не хочешь анализировать GitHub"
+    >
+    <p class="input-hint">Без GitHub анализ будет только по резюме</p>
+</div>
+
+            <button id="analyzeBtn" class="btn-primary">
+                🚀 Начать анализ
+            </button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-text">AI анализирует твоё портфолио...</div>
+            <div class="loading-subtext">Это займёт 30-60 секунд</div>
+        </div>
+
+        <!-- Results -->
+        <div class="results" id="results"></div>
+    </div>
+
+    <!-- SVG Gradient for Score Circle -->
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <script src="script.js"></script>
+</body>
+</html>
