@@ -7,78 +7,139 @@ const analyzeBtn = document.getElementById('analyzeBtn');
 const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 
-// Drag & Drop
-uploadZone.addEventListener('click', () => resumeInput.click());
+// Новые элементы для переключения режимов
+const modeBtns = document.querySelectorAll('.mode-btn');
+const fileMode = document.getElementById('fileMode');
+const textMode = document.getElementById('textMode');
+const resumeText = document.getElementById('resumeText');
+const charCount = document.getElementById('charCount');
 
-uploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadZone.classList.add('dragover');
+// ===== Переключение режимов (Файл / Текст) =====
+modeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Убираем active у всех кнопок
+        modeBtns.forEach(b => b.classList.remove('active'));
+        // Добавляем active текущей
+        btn.classList.add('active');
+        
+        const mode = btn.dataset.mode;
+        fileMode.style.display = mode === 'file' ? 'block' : 'none';
+        textMode.style.display = mode === 'text' ? 'block' : 'none';
+    });
 });
 
-uploadZone.addEventListener('dragleave', () => {
-    uploadZone.classList.remove('dragover');
-});
+// ===== Счётчик символов для текстового режима =====
+if (resumeText && charCount) {
+    resumeText.addEventListener('input', () => {
+        const count = resumeText.value.length;
+        charCount.textContent = count;
+        
+        const counterParent = charCount.parentElement;
+        if (count >= 100) {
+            counterParent.classList.add('valid');
+            counterParent.classList.remove('invalid');
+        } else {
+            counterParent.classList.add('invalid');
+            counterParent.classList.remove('valid');
+        }
+    });
+}
 
-uploadZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadZone.classList.remove('dragover');
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0 && files[0].type === 'application/pdf') {
-        resumeInput.files = files;
-        showFileName(files[0].name);
-    }
-});
+// ===== Drag & Drop (только для файлового режима) =====
+if (uploadZone && resumeInput) {
+    uploadZone.addEventListener('click', () => resumeInput.click());
 
-resumeInput.addEventListener('change', (e) => {
-    if (e.target.files[0]) {
-        showFileName(e.target.files[0].name);
-    }
-});
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            // Принимаем PDF, DOCX, DOC
+            const file = files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+            
+            if (['pdf', 'docx', 'doc'].includes(ext)) {
+                resumeInput.files = files;
+                showFileName(file.name);
+            } else {
+                alert('Поддерживаются только PDF и DOCX файлы');
+            }
+        }
+    });
+
+    resumeInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+            showFileName(e.target.files[0].name);
+        }
+    });
+}
 
 function showFileName(name) {
     fileNameDisplay.textContent = `✓ ${name}`;
     fileNameDisplay.classList.add('active');
 }
 
-// Analysis
+// ===== Анализ =====
 analyzeBtn.addEventListener('click', analyze);
 
 async function analyze() {
-    if (!resumeInput.files[0]) {
-        alert('Пожалуйста, выбери PDF файл');
-        return;
-    }
-
+    const activeMode = document.querySelector('.mode-btn.active').dataset.mode;
     const formData = new FormData();
-    formData.append('resume', resumeInput.files[0]);
+    
+    // Валидация в зависимости от режима
+    if (activeMode === 'file') {
+        if (!resumeInput.files[0]) {
+            alert('Пожалуйста, выбери файл');
+            return;
+        }
+        formData.append('resume', resumeInput.files[0]);
+    } else {
+        const text = resumeText.value.trim();
+        if (text.length < 100) {
+            alert(`Минимум 100 символов. Сейчас: ${text.length}`);
+            resumeText.focus();
+            return;
+        }
+        formData.append('resume_text', text);
+    }
+    
     formData.append('generate_audio', 'true');
-
+    
     // GitHub добавляем ТОЛЬКО если заполнен
     const githubValue = githubInput.value.trim();
     if (githubValue) {
         formData.append('github_username', githubValue);
     }
-
+    
     loading.classList.add('active');
     results.classList.remove('active');
     results.innerHTML = '';
     analyzeBtn.disabled = true;
-
+    
     try {
         const response = await fetch('http://localhost:8000/analyze', {
             method: 'POST',
             body: formData
         });
-
+        
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.detail || 'Ошибка сервера');
         }
-
+        
         const data = await response.json();
         displayResults(data.analysis, data.audio, data.github_profile);
-
+        
     } catch (error) {
         results.innerHTML = `
             <div class="result-card">
@@ -96,6 +157,7 @@ async function analyze() {
     }
 }
 
+// ===== Отображение результатов =====
 function displayResults(analysis, audioBase64, githubProfile) {
     const results = document.getElementById('results');
     

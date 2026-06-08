@@ -28,29 +28,59 @@
 
         <!-- Upload Section -->
         <div class="upload-section">
-            <div class="upload-zone" id="uploadZone">
-                <div class="upload-icon">📄</div>
-                <div class="upload-text">Перетащи PDF резюме сюда</div>
-                <div class="upload-hint">или нажми, чтобы выбрать файл</div>
-                <input type="file" id="resumeInput" accept=".pdf" class="file-input">
+            <!-- Переключатель режимов -->
+            <div class="input-mode-switch">
+                <button class="mode-btn active" data-mode="file">📄 Загрузить файл</button>
+                <button class="mode-btn" data-mode="text">📝 Вставить текст</button>
             </div>
-            
-            <div class="file-name" id="fileName"></div>
 
-           <div class="input-group">
-    <label for="githubInput" class="input-label">
-        <span class="label-icon"></span>
-        GitHub username
-        <span class="optional-badge">опционально</span>
-    </label>
-    <input 
-        type="text" 
-        id="githubInput" 
-        class="input-field" 
-        placeholder="Оставь пустым, если не хочешь анализировать GitHub"
-    >
-    <p class="input-hint">Без GitHub анализ будет только по резюме</p>
-</div>
+            <!-- Режим файла -->
+            <div id="fileMode" class="input-mode">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Перетащи PDF или DOCX сюда</div>
+                    <div class="upload-hint">или нажми, чтобы выбрать файл</div>
+                    <input type="file" id="resumeInput" accept=".pdf,.docx,.doc" class="file-input">
+                </div>
+                <div class="file-name" id="fileName"></div>
+            </div>
+
+            <!-- Режим текста -->
+            <div id="textMode" class="input-mode" style="display:none">
+                <textarea 
+                    id="resumeText" 
+                    class="resume-textarea"
+                    placeholder="Скопируй сюда текст резюме...
+
+Можно копировать с:
+• LinkedIn профиля
+• HeadHunter (hh.ru)
+• Word документа
+• Google Docs
+
+Минимум 100 символов"
+                    rows="12"
+                ></textarea>
+                <div class="char-counter">
+                    <span id="charCount">0</span> символов (минимум 100)
+                </div>
+            </div>
+
+            <!-- GitHub -->
+            <div class="input-group">
+                <label for="githubInput" class="input-label">
+                    <span class="label-icon"></span>
+                    GitHub username
+                    <span class="optional-badge">опционально</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="githubInput" 
+                    class="input-field" 
+                    placeholder="Оставь пустым, если не хочешь анализировать GitHub"
+                >
+                <p class="input-hint">Без GitHub анализ будет только по резюме</p>
+            </div>
 
             <button id="analyzeBtn" class="btn-primary">
                 🚀 Начать анализ
@@ -68,12 +98,20 @@
         <div class="results" id="results"></div>
     </div>
 
-    <!-- SVG Gradient for Score Circle -->
+    <!-- SVG Gradients -->
     <svg width="0" height="0" style="position:absolute">
         <defs>
             <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
                 <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="resumeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#00f0ff;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#00ff88;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="githubGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#7000ff;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#ff00ea;stop-opacity:1" />
             </linearGradient>
         </defs>
     </svg>
