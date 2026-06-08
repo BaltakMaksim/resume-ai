@@ -1,4 +1,4 @@
-// DOM Elements
+// ===== DOM Elements =====
 const uploadZone = document.getElementById('uploadZone');
 const resumeInput = document.getElementById('resumeInput');
 const fileNameDisplay = document.getElementById('fileName');
@@ -17,9 +17,7 @@ const charCount = document.getElementById('charCount');
 // ===== Переключение режимов (Файл / Текст) =====
 modeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        // Убираем active у всех кнопок
         modeBtns.forEach(b => b.classList.remove('active'));
-        // Добавляем active текущей
         btn.classList.add('active');
         
         const mode = btn.dataset.mode;
@@ -45,7 +43,7 @@ if (resumeText && charCount) {
     });
 }
 
-// ===== Drag & Drop (только для файлового режима) =====
+// ===== Drag & Drop =====
 if (uploadZone && resumeInput) {
     uploadZone.addEventListener('click', () => resumeInput.click());
 
@@ -64,15 +62,21 @@ if (uploadZone && resumeInput) {
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            // Принимаем PDF, DOCX, DOC
             const file = files[0];
             const ext = file.name.split('.').pop().toLowerCase();
             
-            if (['pdf', 'docx', 'doc'].includes(ext)) {
+            if (ext === 'pdf' || ext === 'docx') {
                 resumeInput.files = files;
                 showFileName(file.name);
+            } else if (ext === 'doc') {
+                alert('❌ Формат .doc устарел!\n\n' +
+                      '1. Открой файл в Word\n' +
+                      '2. Файл → Сохранить как → DOCX\n' +
+                      '3. Загрузи новый файл\n\n' +
+                      'Или используй режим "📝 Вставить текст"');
             } else {
-                alert('Поддерживаются только PDF и DOCX файлы');
+                alert('️ Поддерживаются только PDF и DOCX файлы\n\n' +
+                      'Или используй режим "📝 Вставить текст"');
             }
         }
     });
@@ -115,7 +119,6 @@ async function analyze() {
     
     formData.append('generate_audio', 'true');
     
-    // GitHub добавляем ТОЛЬКО если заполнен
     const githubValue = githubInput.value.trim();
     if (githubValue) {
         formData.append('github_username', githubValue);
@@ -161,15 +164,11 @@ async function analyze() {
 function displayResults(analysis, audioBase64, githubProfile) {
     const results = document.getElementById('results');
     
-    // Проверяем наличие GitHub данных
     const hasGithub = githubProfile && !githubProfile.error && analysis.github_score !== null;
-    
-    // Определяем основную оценку для круга
     const mainScore = hasGithub 
         ? (analysis.overall_score || 0) 
         : (analysis.resume_score || 0);
     
-    // Оценки для детализации
     const resumeScore = analysis.resume_score || 0;
     const githubScore = hasGithub ? (analysis.github_score || 0) : null;
     
@@ -177,7 +176,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
     const offset = circumference - (mainScore / 10) * circumference;
 
     let html = `
-        <!-- Main Score Card -->
         <div class="result-card">
             <div class="score-display">
                 <div class="score-circle">
@@ -197,7 +195,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
             </div>
         </div>
 
-        <!-- Scores Breakdown -->
         <div class="result-card">
             <div class="result-header">
                 <div class="result-icon">📊</div>
@@ -233,7 +230,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
             </div>
         </div>
 
-        <!-- Strengths -->
         <div class="result-card">
             <div class="result-header">
                 <div class="result-icon">💪</div>
@@ -244,7 +240,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
             </ul>
         </div>
 
-        <!-- Critical Errors -->
         <div class="result-card">
             <div class="result-header">
                 <div class="result-icon">⚠️</div>
@@ -255,7 +250,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
             </ul>
         </div>
 
-        <!-- Missing Keywords -->
         <div class="result-card">
             <div class="result-header">
                 <div class="result-icon">🔑</div>
@@ -266,7 +260,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
             </ul>
         </div>
 
-        <!-- Tech Stack -->
         <div class="result-card">
             <div class="result-header">
                 <div class="result-icon">📊</div>
@@ -277,7 +270,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
             </p>
         </div>
 
-        <!-- Advice -->
         <div class="result-card">
             <div class="advice-card">
                 <h3>🎯 Совет для получения оффера</h3>
@@ -286,7 +278,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
         </div>
     `;
 
-    // Audio Player
     if (audioBase64) {
         html += `
             <div class="result-card">
@@ -308,7 +299,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
     results.innerHTML = html;
     results.classList.add('active');
 
-    // Animate score circle
     setTimeout(() => {
         const progressCircle = results.querySelector('.progress');
         if (progressCircle) {
@@ -317,4 +307,317 @@ function displayResults(analysis, audioBase64, githubProfile) {
     }, 100);
 
     results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ===== Cover Letter Logic =====
+// ===== Cover Letter Logic =====
+const clModeBtns = document.querySelectorAll('.cl-mode-btn');
+const clFileInput = document.getElementById('clResumeInput');
+const clFileName = document.getElementById('clFileName');
+const generateClBtn = document.getElementById('generateClBtn');
+const clResult = document.getElementById('clResult');
+const clTextContent = document.getElementById('clTextContent');
+const clAudioContainer = document.getElementById('clAudioContainer');
+const clAudioPlayer = document.getElementById('clAudioPlayer');
+const copyClBtn = document.getElementById('copyClBtn');
+
+// Переключение Файл/Текст в Cover Letter
+if (clModeBtns) {
+    clModeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            clModeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const target = btn.dataset.target;
+            document.getElementById('cl-file').style.display = target === 'cl-file' ? 'block' : 'none';
+            document.getElementById('cl-text').style.display = target === 'cl-text' ? 'block' : 'none';
+        });
+    });
+}
+
+// Отображение имени файла в Cover Letter
+if (clFileInput) {
+    clFileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+            clFileName.textContent = `✓ ${e.target.files[0].name}`;
+            clFileName.style.color = 'var(--ai-success)';
+        }
+    });
+}
+
+// Генерация Cover Letter
+if (generateClBtn) {
+    generateClBtn.addEventListener('click', async () => {
+        const activeMode = document.querySelector('.cl-mode-btn.active').dataset.target;
+        const company = document.getElementById('clCompany').value.trim();
+        const jobDesc = document.getElementById('clJobDescription').value.trim();
+        
+        if (!company || !jobDesc) {
+            alert('Заполни название компании и описание вакансии');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('company_name', company);
+        formData.append('job_description', jobDesc);
+        formData.append('generate_audio', 'true');
+
+        if (activeMode === 'cl-file') {
+            if (!clFileInput.files[0]) {
+                alert('Выбери файл резюме');
+                return;
+            }
+            formData.append('resume', clFileInput.files[0]);
+        } else {
+            const text = document.getElementById('clResumeText').value.trim();
+            if (text.length < 50) {
+                alert('Вставь текст резюме (минимум 50 символов)');
+                return;
+            }
+            formData.append('resume_text', text);
+        }
+
+        // UI Loading
+        const originalText = generateClBtn.innerHTML;
+        generateClBtn.innerHTML = '⏳ AI пишет письмо и озвучивает...';
+        generateClBtn.disabled = true;
+        clResult.style.display = 'none';
+
+        try {
+            const response = await fetch('http://localhost:8000/generate-cover-letter', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Ошибка генерации');
+            }
+
+            const data = await response.json();
+            
+            // Форматируем текст (заменяем переносы строк на <br>)
+            clTextContent.innerHTML = data.cover_letter.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+            
+            // Сохраняем чистый текст для копирования
+            clResult.dataset.plainText = data.cover_letter;
+            
+            // Аудио плеер
+            if (data.audio) {
+                clAudioPlayer.src = `data:audio/mp3;base64,${data.audio}`;
+                clAudioContainer.style.display = 'block';
+            } else {
+                clAudioContainer.style.display = 'none';
+            }
+            
+            clResult.style.display = 'block';
+            
+            // Скролл к результату
+            clResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        } finally {
+            generateClBtn.innerHTML = originalText;
+            generateClBtn.disabled = false;
+        }
+    });
+}
+
+// Копирование в буфер обмена
+if (copyClBtn) {
+    copyClBtn.addEventListener('click', () => {
+        const text = clResult.dataset.plainText;
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = copyClBtn.textContent;
+            copyClBtn.textContent = '✅ Скопировано!';
+            copyClBtn.style.color = 'var(--ai-success)';
+            setTimeout(() => {
+                copyClBtn.textContent = originalText;
+                copyClBtn.style.color = '';
+            }, 2000);
+        });
+    });
+}
+
+// ===== Match Score Logic =====
+const msModeBtns = document.querySelectorAll('.ms-mode-btn');
+const msFileInput = document.getElementById('msResumeInput');
+const msFileName = document.getElementById('msFileName');
+const matchScoreBtn = document.getElementById('matchScoreBtn');
+const msResult = document.getElementById('msResult');
+const msScoreValue = document.getElementById('msScoreValue');
+const msVerdict = document.getElementById('msVerdict');
+const msSalary = document.getElementById('msSalary');
+const msMatchReasons = document.getElementById('msMatchReasons');
+const msGapReasons = document.getElementById('msGapReasons');
+const msRecommendations = document.getElementById('msRecommendations');
+const msAudioContainer = document.getElementById('msAudioContainer');
+const msAudioPlayer = document.getElementById('msAudioPlayer');
+
+// Переключение Файл/Текст в Match Score
+if (msModeBtns) {
+    msModeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            msModeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const target = btn.dataset.target;
+            document.getElementById('ms-file').style.display = target === 'ms-file' ? 'block' : 'none';
+            document.getElementById('ms-text').style.display = target === 'ms-text' ? 'block' : 'none';
+        });
+    });
+}
+
+// Отображение имени файла в Match Score
+if (msFileInput) {
+    msFileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) {
+            msFileName.textContent = `✓ ${e.target.files[0].name}`;
+            msFileName.style.color = 'var(--ai-success)';
+        }
+    });
+}
+
+// Анализ соответствия вакансии
+if (matchScoreBtn) {
+    matchScoreBtn.addEventListener('click', async () => {
+        const activeMode = document.querySelector('.ms-mode-btn.active').dataset.target;
+        const jobDesc = document.getElementById('msJobDescription').value.trim();
+        
+        if (!jobDesc || jobDesc.length < 50) {
+            alert('Вставь описание вакансии (минимум 50 символов)');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('job_description', jobDesc);
+        formData.append('generate_audio', 'true');
+
+        if (activeMode === 'ms-file') {
+            if (!msFileInput.files[0]) {
+                alert('Выбери файл резюме');
+                return;
+            }
+            formData.append('resume', msFileInput.files[0]);
+        } else {
+            const text = document.getElementById('msResumeText').value.trim();
+            if (text.length < 50) {
+                alert('Вставь текст резюме (минимум 50 символов)');
+                return;
+            }
+            formData.append('resume_text', text);
+        }
+
+        // UI Loading
+        const originalText = matchScoreBtn.innerHTML;
+        matchScoreBtn.innerHTML = '⏳ AI оценивает соответствие...';
+        matchScoreBtn.disabled = true;
+        msResult.style.display = 'none';
+
+        try {
+            const response = await fetch('http://localhost:8000/match-score', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Ошибка анализа');
+            }
+
+            const data = await response.json();
+            const match = data.match_score;
+            
+            // 1. Обновляем процент
+            const score = match.match_score || 0;
+            msScoreValue.textContent = `${score}%`;
+            
+            // 2. Цвет диаграммы в зависимости от процента
+            const circumference = 2 * Math.PI * 80; // 502.65
+            const offset = circumference - (score / 100) * circumference;
+            
+            const progressCircle = msResult.querySelector('.progress-match');
+            if (progressCircle) {
+                // Сбрасываем анимацию
+                progressCircle.style.strokeDashoffset = circumference;
+                progressCircle.style.stroke = '';
+                
+                // Запускаем анимацию через 100ms
+                setTimeout(() => {
+                    progressCircle.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+                    progressCircle.style.strokeDashoffset = offset;
+                    
+                    // Цвет в зависимости от процента
+                    if (score >= 70) {
+                        progressCircle.style.stroke = 'var(--ai-success)';
+                        progressCircle.style.filter = 'drop-shadow(0 0 20px rgba(0, 255, 136, 0.6))';
+                    } else if (score >= 40) {
+                        progressCircle.style.stroke = 'var(--ai-warning)';
+                        progressCircle.style.filter = 'drop-shadow(0 0 20px rgba(255, 170, 0, 0.6))';
+                    } else {
+                        progressCircle.style.stroke = 'var(--ai-danger)';
+                        progressCircle.style.filter = 'drop-shadow(0 0 20px rgba(255, 0, 85, 0.6))';
+                    }
+                }, 100);
+            }
+            
+            // 3. Вердикт
+            msVerdict.textContent = match.verdict || 'Нет вердикта';
+            msVerdict.className = 'ms-verdict';
+            if (score >= 70) msVerdict.classList.add('high');
+            else if (score >= 40) msVerdict.classList.add('medium');
+            else msVerdict.classList.add('low');
+            
+            // 4. Зарплата
+            if (match.salary_estimate) {
+                msSalary.innerHTML = `💰 <strong>Оценка зарплаты:</strong> ${match.salary_estimate}`;
+                msSalary.style.display = 'block';
+            } else {
+                msSalary.style.display = 'none';
+            }
+            
+            // 5. Совпадения
+            msMatchReasons.innerHTML = '';
+            (match.match_reasons || []).forEach(reason => {
+                const li = document.createElement('li');
+                li.textContent = reason;
+                msMatchReasons.appendChild(li);
+            });
+            
+            // 6. Пробелы
+            msGapReasons.innerHTML = '';
+            (match.gap_reasons || []).forEach(reason => {
+                const li = document.createElement('li');
+                li.textContent = reason;
+                msGapReasons.appendChild(li);
+            });
+            
+            // 7. Рекомендации
+            msRecommendations.innerHTML = '';
+            (match.recommendations || []).forEach(rec => {
+                const li = document.createElement('li');
+                li.textContent = rec;
+                msRecommendations.appendChild(li);
+            });
+            
+            // 8. Аудио
+            if (data.audio) {
+                msAudioPlayer.src = `data:audio/mp3;base64,${data.audio}`;
+                msAudioContainer.style.display = 'block';
+            } else {
+                msAudioContainer.style.display = 'none';
+            }
+            
+            // Показываем результат
+            msResult.style.display = 'block';
+            msResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        } finally {
+            matchScoreBtn.innerHTML = originalText;
+            matchScoreBtn.disabled = false;
+        }
+    });
 }
