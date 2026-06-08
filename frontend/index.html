@@ -87,6 +87,164 @@
             </button>
         </div>
 
+        <!-- Cover Letter Section -->
+        <div class="upload-section cover-letter-section">
+            <div class="section-header">
+                <div class="result-icon" style="margin: 0 auto 20px;">✉️</div>
+                <h2 class="section-title">Генератор Cover Letter</h2>
+                <p class="section-subtitle">AI напишет идеальное сопроводительное письмо под конкретную вакансию</p>
+            </div>
+
+            <div class="cl-form-grid">
+                <!-- Резюме -->
+                <div class="cl-input-group">
+                    <label class="cl-label">Твоё резюме</label>
+                    <div class="cl-mode-switch">
+                        <button class="cl-mode-btn active" data-target="cl-file">📄 Файл</button>
+                        <button class="cl-mode-btn" data-target="cl-text">📝 Текст</button>
+                    </div>
+                    
+                    <div id="cl-file" class="cl-mode-content">
+                        <input type="file" id="clResumeInput" accept=".pdf,.docx" class="file-input">
+                        <label for="clResumeInput" class="cl-file-label">
+                            <span id="clFileName">Выбрать файл...</span>
+                        </label>
+                    </div>
+                    
+                    <div id="cl-text" class="cl-mode-content" style="display:none">
+                        <textarea id="clResumeText" class="resume-textarea" rows="6" placeholder="Вставь текст резюме сюда..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Компания и Вакансия -->
+                <div class="cl-input-group">
+                    <label class="cl-label">Название компании</label>
+                    <input type="text" id="clCompany" class="input-field" placeholder="Например: Яндекс, Тинькофф, Сбер">
+                </div>
+
+                <div class="cl-input-group full-width">
+                    <label class="cl-label">Описание вакансии</label>
+                    <textarea id="clJobDescription" class="resume-textarea" rows="8" placeholder="Скопируй текст вакансии с hh.ru или LinkedIn..."></textarea>
+                </div>
+            </div>
+
+            <button id="generateClBtn" class="btn-primary" style="width: 100%; margin-top: 20px;">
+                ✨ Сгенерировать Cover Letter
+            </button>
+
+            <!-- Результат -->
+            <div id="clResult" class="cl-result-box" style="display:none">
+                <div class="cl-result-header">
+                    <span>✉️ Твоё сопроводительное письмо</span>
+                    <button id="copyClBtn" class="copy-btn">📋 Копировать</button>
+                </div>
+                
+                <!-- Аудио плеер -->
+                <div id="clAudioContainer" class="cl-audio-container" style="display:none">
+                    <div class="cl-audio-header">
+                        <span>🔊 Голосовая озвучка письма</span>
+                    </div>
+                    <audio id="clAudioPlayer" controls class="cl-audio-player"></audio>
+                </div>
+                
+                <div id="clTextContent" class="cl-text-content"></div>
+            </div>
+        </div>
+
+        <!-- Match Score Section -->
+        <div class="upload-section match-section">
+            <div class="section-header">
+                <div class="result-icon" style="margin: 0 auto 20px;">🎯</div>
+                <h2 class="section-title">Подойду ли я на вакансию?</h2>
+                <p class="section-subtitle">AI оценит процент соответствия твоего резюме описанию вакансии</p>
+            </div>
+
+            <div class="cl-form-grid">
+                <!-- Резюме -->
+                <div class="cl-input-group">
+                    <label class="cl-label">Твоё резюме</label>
+                    <div class="cl-mode-switch">
+                        <button class="ms-mode-btn active" data-target="ms-file">📄 Файл</button>
+                        <button class="ms-mode-btn" data-target="ms-text">📝 Текст</button>
+                    </div>
+                    
+                    <div id="ms-file" class="cl-mode-content">
+                        <input type="file" id="msResumeInput" accept=".pdf,.docx" class="file-input">
+                        <label for="msResumeInput" class="cl-file-label">
+                            <span id="msFileName">Выбрать файл...</span>
+                        </label>
+                    </div>
+                    
+                    <div id="ms-text" class="cl-mode-content" style="display:none">
+                        <textarea id="msResumeText" class="resume-textarea" rows="6" placeholder="Вставь текст резюме сюда..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Вакансия -->
+                <div class="cl-input-group">
+                    <label class="cl-label">Описание вакансии</label>
+                    <textarea id="msJobDescription" class="resume-textarea" rows="8" placeholder="Скопируй текст вакансии с hh.ru, LinkedIn или сайта компании..."></textarea>
+                </div>
+            </div>
+
+            <button id="matchScoreBtn" class="btn-primary" style="width: 100%; margin-top: 20px;">
+                🎯 Оценить соответствие
+            </button>
+
+            <!-- Результат -->
+            <div id="msResult" class="cl-result-box" style="display:none">
+                <div class="cl-result-header">
+                    <span>📊 Результат анализа</span>
+                </div>
+                
+                <!-- Аудио плеер -->
+                <div id="msAudioContainer" class="cl-audio-container" style="display:none">
+                    <div class="cl-audio-header">
+                        <span>🔊 Голосовой вердикт AI HR</span>
+                    </div>
+                    <audio id="msAudioPlayer" controls class="cl-audio-player"></audio>
+                </div>
+                
+                <div class="ms-result-content">
+                    <!-- Круговая диаграмма -->
+                    <div class="ms-score-circle">
+                        <svg width="180" height="180">
+                            <circle class="bg" cx="90" cy="90" r="80"></circle>
+                            <circle class="progress-match" cx="90" cy="90" r="80" 
+                                stroke-dasharray="502.65" 
+                                stroke-dashoffset="502.65">
+                            </circle>
+                        </svg>
+                        <div class="ms-score-value" id="msScoreValue">0%</div>
+                    </div>
+                    
+                    <!-- Вердикт -->
+                    <div class="ms-verdict" id="msVerdict"></div>
+                    
+                    <!-- Зарплата -->
+                    <div class="ms-salary" id="msSalary"></div>
+                    
+                    <!-- Сетка: совпадения и пробелы -->
+                    <div class="ms-grid">
+                        <div class="ms-column pros">
+                            <h3>✅ Почему подхожу</h3>
+                            <ul id="msMatchReasons"></ul>
+                        </div>
+                        <div class="ms-column cons">
+                            <h3>⚠️ Чего не хватает</h3>
+                            <ul id="msGapReasons"></ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Рекомендации -->
+                    <div class="ms-recommendations">
+                        <h3>💡 Как повысить шансы</h3>
+                        <ul id="msRecommendations"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading -->
         <div class="loading" id="loading">
             <div class="loading-spinner"></div>
