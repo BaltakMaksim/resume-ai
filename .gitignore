@@ -7,6 +7,7 @@ __pycache__/
 *.so
 *.egg
 *.egg-info/
+.env
 dist/
 build/
 develop-eggs/
