@@ -1,81 +1,37 @@
 import edge_tts
-import asyncio
+import logging
+from app.config import VOICE
 import base64
-from pathlib import Path
-import uuid
-import os
 
-# Папка для временных аудиофайлов
-AUDIO_DIR = Path("app/audio")
-AUDIO_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger(__name__)
 
-# Голоса для русского языка (нейросетевые голоса)
-RU_VOICES = {
-    "male": "ru-RU-DmitryNeural",      # Мужской (Дмитрий)
-    "female": "ru-RU-SvetlanaNeural",  # Женский (Светлана)
-}
-
-async def generate_speech(text: str, voice: str = "male") -> str:
-    """
-    Генерирует аудио из текста и возвращает base64 строку
+async def generate_speech(text: str, voice: str = "ru-RU-DmitryNeural") -> bytes:
+    """Генерация речи через Edge TTS"""
     
-    Args:
-        text: Текст для озвучки
-        voice: "male" или "female"
+    if not text or not text.strip():
+        logger.error("❌ Пустой текст для TTS")
+        raise ValueError("Текст для озвучки пустой")
     
-    Returns:
-        Base64 encoded audio (MP3)
-    """
-    # Выбираем голос
-    voice_name = RU_VOICES.get(voice, RU_VOICES["male"])
-    
-    # Генерируем уникальное имя файла, чтобы не было конфликтов
-    filename = f"{uuid.uuid4()}.mp3"
-    filepath = AUDIO_DIR / filename
-    
-    print(f"🔊 Начинаю генерацию аудио для файла {filename}...")
+    logger.info(f"🎤 Генерация речи: голос={voice}, длина={len(text)} символов")
+    logger.debug(f"Текст: {text[:100]}...")
     
     try:
-        # Создаем аудио через Edge TTS
-        # text: текст, voice_name: голос
-        communicate = edge_tts.Communicate(text, voice_name)
+        communicate = edge_tts.Communicate(text, VOICE)
         
-        # Сохраняем файл на диск
-        await communicate.save(str(filepath))
+        # Собираем аудио в память
+        audio_data = b""
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                audio_data += chunk["data"]
         
-        # Читаем файл и конвертируем в base64 для отправки на фронтенд
-        with open(filepath, "rb") as f:
-            audio_bytes = f.read()
-            audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
+        if not audio_data:
+            logger.error("❌ Edge TTS не вернул аудио данные")
+            raise ValueError("No audio was received from Edge TTS")
         
-        print(f"✅ Аудио {filename} успешно сгенерировано ({len(audio_base64)} символов)")
-        
-        return audio_base64
+        logger.info(f"✅ Аудио сгенерировано: {len(audio_data)} байт")
+        return base64.b64encode(audio_data).decode('utf-8')
         
     except Exception as e:
-        print(f"❌ Ошибка генерации речи: {e}")
-        return ""
-        
-    finally:
-        # Удаляем файл после использования (чтобы не забивать диск)
-        # Или используем функцию очистки ниже
-        if filepath.exists():
-            filepath.unlink() 
-
-async def _cleanup_old_files(max_files: int = 10):
-    """Удаляет старые аудиофайлы, оставляя только последние"""
-    try:
-        if not AUDIO_DIR.exists():
-            return
-            
-        files = list(AUDIO_DIR.glob("*.mp3"))
-        # Сортируем по времени изменения
-        files.sort(key=lambda x: x.stat().st_mtime)
-        
-        # Удаляем лишние
-        while len(files) > max_files:
-            files[0].unlink()
-            files.pop(0)
-            
-    except Exception as e:
-        print(f"Ошибка очистки аудио: {e}")
+        logger.error(f"❌ Ошибка Edge TTS: {type(e).__name__}: {str(e)}")
+        logger.error(f"Параметры: voice={voice}, text_length={len(text)}")
+        raise

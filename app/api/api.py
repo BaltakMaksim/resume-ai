@@ -64,6 +64,10 @@ async def analyze_candidate(
             audio_base64 = await generate_speech(text=analysis["tts_summary"], voice="male")
         except Exception as e:
             print(f"⚠️ Ошибка TTS: {e}")
+
+            print(f"📊 analysis keys: {analysis.keys()}")
+    print(f"📊 github_data: {github_data}")
+    print(f"📊 audio_base64 length: {len(audio_base64) if audio_base64 else 0}")
     
     return JSONResponse({
         "analysis": analysis,

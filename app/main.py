@@ -2,6 +2,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.api import api
+import logging
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('app.log', encoding='utf-8')
+    ]
+)
+
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("openai").setLevel(logging.WARNING)
 
 app = FastAPI(
     title="Portfolio Roaster",
@@ -37,3 +52,5 @@ async def health():
 async def docs_redirect():
     """Редирект на Swagger UI"""
     return {"docs": "/docs", "redoc": "/redoc"}
+
+    
