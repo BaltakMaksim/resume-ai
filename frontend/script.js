@@ -1,3 +1,60 @@
+// ===== Toast Notifications =====
+function showToast(message, type = 'info', duration = 5000, title = null) {
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+    
+    const config = {
+        error:   { icon: '❌', defaultTitle: 'Ошибка' },
+        success: { icon: '✅', defaultTitle: 'Успешно' },
+        warning: { icon: '⚠️', defaultTitle: 'Внимание' },
+        info:    { icon: 'ℹ️', defaultTitle: 'Информация' }
+    };
+    
+    const cfg = config[type] || config.info;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <div class="toast-icon">${cfg.icon}</div>
+        <div class="toast-content">
+            <div class="toast-title">${title || cfg.defaultTitle}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" aria-label="Закрыть">✕</button>
+        <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
+    `;
+    
+    container.appendChild(toast);
+    
+    const closeToast = () => {
+        toast.classList.add('hiding');
+        setTimeout(() => toast.remove(), 300);
+    };
+    
+    toast.querySelector('.toast-close').addEventListener('click', closeToast);
+    
+    const timer = setTimeout(closeToast, duration);
+    
+    toast.addEventListener('mouseenter', () => {
+        clearTimeout(timer);
+        const progress = toast.querySelector('.toast-progress');
+        if (progress) progress.style.animationPlayState = 'paused';
+    });
+    
+    toast.addEventListener('mouseleave', () => {
+        setTimeout(closeToast, 2000);
+        const progress = toast.querySelector('.toast-progress');
+        if (progress) progress.style.animationPlayState = 'running';
+    });
+    
+    return toast;
+}
+
+const showError = (msg, duration = 6000) => showToast(msg, 'error', duration);
+const showSuccess = (msg, duration = 4000) => showToast(msg, 'success', duration);
+const showWarning = (msg, duration = 5000) => showToast(msg, 'warning', duration);
+const showInfo = (msg, duration = 4000) => showToast(msg, 'info', duration);
+
 // ===== DOM Elements =====
 const uploadZone = document.getElementById('uploadZone');
 const resumeInput = document.getElementById('resumeInput');
@@ -7,14 +64,13 @@ const analyzeBtn = document.getElementById('analyzeBtn');
 const loading = document.getElementById('loading');
 const results = document.getElementById('results');
 
-// Новые элементы для переключения режимов
 const modeBtns = document.querySelectorAll('.mode-btn');
 const fileMode = document.getElementById('fileMode');
 const textMode = document.getElementById('textMode');
 const resumeText = document.getElementById('resumeText');
 const charCount = document.getElementById('charCount');
 
-// ===== Переключение режимов (Файл / Текст) =====
+// ===== Mode Switch =====
 modeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
         modeBtns.forEach(b => b.classList.remove('active'));
@@ -26,7 +82,7 @@ modeBtns.forEach(btn => {
     });
 });
 
-// ===== Счётчик символов для текстового режима =====
+// ===== Character Counter =====
 if (resumeText && charCount) {
     resumeText.addEventListener('input', () => {
         const count = resumeText.value.length;
@@ -69,14 +125,9 @@ if (uploadZone && resumeInput) {
                 resumeInput.files = files;
                 showFileName(file.name);
             } else if (ext === 'doc') {
-                alert('❌ Формат .doc устарел!\n\n' +
-                      '1. Открой файл в Word\n' +
-                      '2. Файл → Сохранить как → DOCX\n' +
-                      '3. Загрузи новый файл\n\n' +
-                      'Или используй режим "📝 Вставить текст"');
+                showError('Формат .doc устарел! Открой файл в Word и сохрани как .docx, или используй режим "📝 Вставить текст"');
             } else {
-                alert('️ Поддерживаются только PDF и DOCX файлы\n\n' +
-                      'Или используй режим "📝 Вставить текст"');
+                showError('Поддерживаются только PDF и DOCX файлы. Или используй режим "📝 Вставить текст"');
             }
         }
     });
@@ -93,24 +144,23 @@ function showFileName(name) {
     fileNameDisplay.classList.add('active');
 }
 
-// ===== Анализ =====
+// ===== Resume Analysis =====
 analyzeBtn.addEventListener('click', analyze);
 
 async function analyze() {
     const activeMode = document.querySelector('.mode-btn.active').dataset.mode;
     const formData = new FormData();
     
-    // Валидация в зависимости от режима
     if (activeMode === 'file') {
         if (!resumeInput.files[0]) {
-            alert('Пожалуйста, выбери файл');
+            showError('Пожалуйста, выбери файл');
             return;
         }
         formData.append('resume', resumeInput.files[0]);
     } else {
         const text = resumeText.value.trim();
         if (text.length < 100) {
-            alert(`Минимум 100 символов. Сейчас: ${text.length}`);
+            showError(`Минимум 100 символов. Сейчас: ${text.length}`);
             resumeText.focus();
             return;
         }
@@ -142,8 +192,10 @@ async function analyze() {
         
         const data = await response.json();
         displayResults(data.analysis, data.audio, data.github_profile);
+        showSuccess('Анализ завершён успешно');
         
     } catch (error) {
+        showError(error.message);
         results.innerHTML = `
             <div class="result-card">
                 <div class="result-header">
@@ -160,7 +212,7 @@ async function analyze() {
     }
 }
 
-// ===== Отображение результатов =====
+// ===== Display Results =====
 function displayResults(analysis, audioBase64, githubProfile) {
     const results = document.getElementById('results');
     
@@ -310,7 +362,6 @@ function displayResults(analysis, audioBase64, githubProfile) {
 }
 
 // ===== Cover Letter Logic =====
-// ===== Cover Letter Logic =====
 const clModeBtns = document.querySelectorAll('.cl-mode-btn');
 const clFileInput = document.getElementById('clResumeInput');
 const clFileName = document.getElementById('clFileName');
@@ -321,7 +372,6 @@ const clAudioContainer = document.getElementById('clAudioContainer');
 const clAudioPlayer = document.getElementById('clAudioPlayer');
 const copyClBtn = document.getElementById('copyClBtn');
 
-// Переключение Файл/Текст в Cover Letter
 if (clModeBtns) {
     clModeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -335,7 +385,6 @@ if (clModeBtns) {
     });
 }
 
-// Отображение имени файла в Cover Letter
 if (clFileInput) {
     clFileInput.addEventListener('change', (e) => {
         if (e.target.files[0]) {
@@ -345,7 +394,6 @@ if (clFileInput) {
     });
 }
 
-// Генерация Cover Letter
 if (generateClBtn) {
     generateClBtn.addEventListener('click', async () => {
         const activeMode = document.querySelector('.cl-mode-btn.active').dataset.target;
@@ -353,7 +401,7 @@ if (generateClBtn) {
         const jobDesc = document.getElementById('clJobDescription').value.trim();
         
         if (!company || !jobDesc) {
-            alert('Заполни название компании и описание вакансии');
+            showError('Заполни название компании и описание вакансии');
             return;
         }
 
@@ -364,20 +412,19 @@ if (generateClBtn) {
 
         if (activeMode === 'cl-file') {
             if (!clFileInput.files[0]) {
-                alert('Выбери файл резюме');
+                showError('Выбери файл резюме');
                 return;
             }
             formData.append('resume', clFileInput.files[0]);
         } else {
             const text = document.getElementById('clResumeText').value.trim();
             if (text.length < 50) {
-                alert('Вставь текст резюме (минимум 50 символов)');
+                showError('Вставь текст резюме (минимум 50 символов)');
                 return;
             }
             formData.append('resume_text', text);
         }
 
-        // UI Loading
         const originalText = generateClBtn.innerHTML;
         generateClBtn.innerHTML = '⏳ AI пишет письмо и озвучивает...';
         generateClBtn.disabled = true;
@@ -396,13 +443,9 @@ if (generateClBtn) {
 
             const data = await response.json();
             
-            // Форматируем текст (заменяем переносы строк на <br>)
             clTextContent.innerHTML = data.cover_letter.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
-            
-            // Сохраняем чистый текст для копирования
             clResult.dataset.plainText = data.cover_letter;
             
-            // Аудио плеер
             if (data.audio) {
                 clAudioPlayer.src = `data:audio/mp3;base64,${data.audio}`;
                 clAudioContainer.style.display = 'block';
@@ -411,12 +454,11 @@ if (generateClBtn) {
             }
             
             clResult.style.display = 'block';
-            
-            // Скролл к результату
+            showSuccess('Сопроводительное письмо сгенерировано');
             clResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         } catch (error) {
-            alert('Ошибка: ' + error.message);
+            showError(error.message);
         } finally {
             generateClBtn.innerHTML = originalText;
             generateClBtn.disabled = false;
@@ -424,18 +466,11 @@ if (generateClBtn) {
     });
 }
 
-// Копирование в буфер обмена
 if (copyClBtn) {
     copyClBtn.addEventListener('click', () => {
         const text = clResult.dataset.plainText;
         navigator.clipboard.writeText(text).then(() => {
-            const originalText = copyClBtn.textContent;
-            copyClBtn.textContent = '✅ Скопировано!';
-            copyClBtn.style.color = 'var(--ai-success)';
-            setTimeout(() => {
-                copyClBtn.textContent = originalText;
-                copyClBtn.style.color = '';
-            }, 2000);
+            showSuccess('Скопировано в буфер обмена');
         });
     });
 }
@@ -455,7 +490,6 @@ const msRecommendations = document.getElementById('msRecommendations');
 const msAudioContainer = document.getElementById('msAudioContainer');
 const msAudioPlayer = document.getElementById('msAudioPlayer');
 
-// Переключение Файл/Текст в Match Score
 if (msModeBtns) {
     msModeBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -469,7 +503,6 @@ if (msModeBtns) {
     });
 }
 
-// Отображение имени файла в Match Score
 if (msFileInput) {
     msFileInput.addEventListener('change', (e) => {
         if (e.target.files[0]) {
@@ -479,14 +512,13 @@ if (msFileInput) {
     });
 }
 
-// Анализ соответствия вакансии
 if (matchScoreBtn) {
     matchScoreBtn.addEventListener('click', async () => {
         const activeMode = document.querySelector('.ms-mode-btn.active').dataset.target;
         const jobDesc = document.getElementById('msJobDescription').value.trim();
         
         if (!jobDesc || jobDesc.length < 50) {
-            alert('Вставь описание вакансии (минимум 50 символов)');
+            showError('Вставь описание вакансии (минимум 50 символов)');
             return;
         }
 
@@ -496,20 +528,19 @@ if (matchScoreBtn) {
 
         if (activeMode === 'ms-file') {
             if (!msFileInput.files[0]) {
-                alert('Выбери файл резюме');
+                showError('Выбери файл резюме');
                 return;
             }
             formData.append('resume', msFileInput.files[0]);
         } else {
             const text = document.getElementById('msResumeText').value.trim();
             if (text.length < 50) {
-                alert('Вставь текст резюме (минимум 50 символов)');
+                showError('Вставь текст резюме (минимум 50 символов)');
                 return;
             }
             formData.append('resume_text', text);
         }
 
-        // UI Loading
         const originalText = matchScoreBtn.innerHTML;
         matchScoreBtn.innerHTML = '⏳ AI оценивает соответствие...';
         matchScoreBtn.disabled = true;
@@ -529,26 +560,21 @@ if (matchScoreBtn) {
             const data = await response.json();
             const match = data.match_score;
             
-            // 1. Обновляем процент
             const score = match.match_score || 0;
             msScoreValue.textContent = `${score}%`;
             
-            // 2. Цвет диаграммы в зависимости от процента
-            const circumference = 2 * Math.PI * 80; // 502.65
+            const circumference = 2 * Math.PI * 80;
             const offset = circumference - (score / 100) * circumference;
             
             const progressCircle = msResult.querySelector('.progress-match');
             if (progressCircle) {
-                // Сбрасываем анимацию
                 progressCircle.style.strokeDashoffset = circumference;
                 progressCircle.style.stroke = '';
                 
-                // Запускаем анимацию через 100ms
                 setTimeout(() => {
                     progressCircle.style.transition = 'stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
                     progressCircle.style.strokeDashoffset = offset;
                     
-                    // Цвет в зависимости от процента
                     if (score >= 70) {
                         progressCircle.style.stroke = 'var(--ai-success)';
                         progressCircle.style.filter = 'drop-shadow(0 0 20px rgba(0, 255, 136, 0.6))';
@@ -562,14 +588,12 @@ if (matchScoreBtn) {
                 }, 100);
             }
             
-            // 3. Вердикт
             msVerdict.textContent = match.verdict || 'Нет вердикта';
             msVerdict.className = 'ms-verdict';
             if (score >= 70) msVerdict.classList.add('high');
             else if (score >= 40) msVerdict.classList.add('medium');
             else msVerdict.classList.add('low');
             
-            // 4. Зарплата
             if (match.salary_estimate) {
                 msSalary.innerHTML = `💰 <strong>Оценка зарплаты:</strong> ${match.salary_estimate}`;
                 msSalary.style.display = 'block';
@@ -577,7 +601,6 @@ if (matchScoreBtn) {
                 msSalary.style.display = 'none';
             }
             
-            // 5. Совпадения
             msMatchReasons.innerHTML = '';
             (match.match_reasons || []).forEach(reason => {
                 const li = document.createElement('li');
@@ -585,7 +608,6 @@ if (matchScoreBtn) {
                 msMatchReasons.appendChild(li);
             });
             
-            // 6. Пробелы
             msGapReasons.innerHTML = '';
             (match.gap_reasons || []).forEach(reason => {
                 const li = document.createElement('li');
@@ -593,7 +615,6 @@ if (matchScoreBtn) {
                 msGapReasons.appendChild(li);
             });
             
-            // 7. Рекомендации
             msRecommendations.innerHTML = '';
             (match.recommendations || []).forEach(rec => {
                 const li = document.createElement('li');
@@ -601,7 +622,6 @@ if (matchScoreBtn) {
                 msRecommendations.appendChild(li);
             });
             
-            // 8. Аудио
             if (data.audio) {
                 msAudioPlayer.src = `data:audio/mp3;base64,${data.audio}`;
                 msAudioContainer.style.display = 'block';
@@ -609,15 +629,82 @@ if (matchScoreBtn) {
                 msAudioContainer.style.display = 'none';
             }
             
-            // Показываем результат
             msResult.style.display = 'block';
+            showSuccess('Анализ соответствия завершён');
             msResult.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
         } catch (error) {
-            alert('Ошибка: ' + error.message);
+            showError(error.message);
         } finally {
             matchScoreBtn.innerHTML = originalText;
             matchScoreBtn.disabled = false;
         }
     });
 }
+
+// ===== Mobile Navigation =====
+const navToggle = document.getElementById('navToggle');
+const navLinks = document.querySelector('.nav-links');
+
+if (navToggle) {
+    navToggle.addEventListener('click', () => {
+        navLinks.classList.toggle('active');
+    });
+}
+
+// Close mobile menu when clicking on a link
+document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => {
+        navLinks.classList.remove('active');
+    });
+});
+
+// ===== Active Navigation Highlighting =====
+// ===== Active Navigation Highlighting =====
+const sections = document.querySelectorAll('.section');
+const navLinksArray = document.querySelectorAll('.nav-link');
+const navHeight = 80; // Высота навигации + отступ
+
+function updateActiveNav() {
+    const scrollPosition = window.scrollY + navHeight + 100; // 100px offset для лучшего определения
+    
+    let currentSection = '';
+    
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.offsetHeight;
+        
+        // Проверяем, находится ли секция в viewport
+        if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+            currentSection = section.getAttribute('id');
+        }
+    });
+    
+    // Если дошли до конца страницы — подсвечиваем последнюю секцию
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 100) {
+        currentSection = sections[sections.length - 1].getAttribute('id');
+    }
+    
+    // Обновляем активные ссылки
+    navLinksArray.forEach(link => {
+        link.classList.remove('active');
+        const linkSection = link.getAttribute('href').slice(1); // Убираем #
+        
+        if (linkSection === currentSection) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// Вызываем при скролле
+window.addEventListener('scroll', updateActiveNav);
+
+// Вызываем при загрузке страницы
+window.addEventListener('load', updateActiveNav);
+
+// Вызываем при клике на ссылку (после скролла)
+navLinksArray.forEach(link => {
+    link.addEventListener('click', () => {
+        setTimeout(updateActiveNav, 500); // Задержка для завершения анимации скролла
+    });
+});
