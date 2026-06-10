@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.api import api
+from app.router import api
 import logging
 
 
@@ -39,18 +39,9 @@ app.include_router(api.router)
 # Раздача статики (фронтенд)
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
 
-@app.get("/api/health")
-async def health():
-    """Проверка работоспособности API"""
-    return {
-        "status": "OK",
-        "service": "Portfolio Roaster",
-        "version": "2.0.0"
-    }
 
 @app.get("/api/docs")
 async def docs_redirect():
     """Редирект на Swagger UI"""
     return {"docs": "/docs", "redoc": "/redoc"}
-
     
