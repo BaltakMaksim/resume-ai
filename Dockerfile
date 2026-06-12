@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Копируем код приложения
 COPY ./app ./app
+COPY ./frontend ./frontend 
 
 # Запускаем Uvicorn с 2 воркерами (используем оба ядра VPS)
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
