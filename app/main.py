@@ -34,7 +34,7 @@ app.add_middleware(
 )
 
 # Подключаем роуты API
-app.include_router(api.router)
+app.include_router(api.router,prefix='/api')
 
 # Раздача статики (фронтенд)
 app.mount("/", StaticFiles(directory="frontend", html=True), name="frontend")
