@@ -180,7 +180,7 @@ async function analyze() {
     analyzeBtn.disabled = true;
     
     try {
-        const response = await fetch('http://localhost:8000/analyze', {
+        const response = await fetch('/api/analyze', {
             method: 'POST',
             body: formData
         });
@@ -431,7 +431,7 @@ if (generateClBtn) {
         clResult.style.display = 'none';
 
         try {
-            const response = await fetch('http://localhost:8000/generate-cover-letter', {
+            const response = await fetch('/api/generate-cover-letter', {
                 method: 'POST',
                 body: formData
             });
@@ -547,7 +547,7 @@ if (matchScoreBtn) {
         msResult.style.display = 'none';
 
         try {
-            const response = await fetch('http://localhost:8000/match-score', {
+            const response = await fetch('/api/match-score', {
                 method: 'POST',
                 body: formData
             });
